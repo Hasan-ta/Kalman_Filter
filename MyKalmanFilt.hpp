@@ -1,10 +1,12 @@
-/*
- * MyKalmanFilt.hpp
- *
- *  Created on: Jun 24, 2016
- *      Author: hasan
- */
 
+/****************************************************************************************
+ Author      : Hasan Tafish
+ email:		 : htafish@hra.com
+ Date        : Nov,2016
+ Build       : -std=c++11
+
+		- My Kalman Filter class definition
+ ***************************************************************************************/
 #ifndef MYKALMANFILT_HPP_
 #define MYKALMANFILT_HPP_
 
@@ -26,8 +28,8 @@ protected:
 	MyMatrix<double> V;
 	MyMatrix<double> W;
 
-    MyMatrix<double> motion;
-    MyMatrix<double> measure;
+	MyMatrix<double> motion;
+	MyMatrix<double> measure;
 
 	int stateVarNum;
 	int measVarNum;
@@ -38,6 +40,8 @@ protected:
 
 	bool debug = false;
 
+	bool filter_initialized = false;
+
 	std::ofstream logFile;
 
 public:
@@ -46,9 +50,9 @@ public:
 
 	MyMatrix<double> P;
 
-	MyKalmanFilt();
+	MyKalmanFilt(){};
 
-	MyKalmanFilt(const double&, const int&, const int&, const int&, const int&, bool);
+	void initFilter(const int&, const int&, const int&, const int&);
 
 	virtual ~MyKalmanFilt();
 
@@ -63,14 +67,24 @@ public:
 	virtual void setV();
 
 	virtual void setW();
+	
+	void setStateVarNum(const int&);
+
+	void setMeasVarNum(const int&);
+
+	void setV_size(const int&);
+
+	void setW_size(const int&);
+
+	void setTimeStep(const double&);
 
 	MyMatrix<double> getP();
 
-	virtual void init(const MyMatrix<double>&, const MyMatrix<double>&);
+	void initStateAndCov(const MyMatrix<double>&, const MyMatrix<double>&);
 
-	void motionUpdate(const MyMatrix<double>&);
+	virtual void motionUpdate(const MyMatrix<double>&);
 
-	void sensorUpdate(const MyMatrix<double>&);
+	virtual void sensorUpdate(const MyMatrix<double>&);
 
 	void step(const MyMatrix<double>&, const MyMatrix<double>&);
 

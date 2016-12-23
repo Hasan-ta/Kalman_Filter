@@ -1,9 +1,11 @@
-/*
- * MyMatrix.hpp
- *
- *  Created on: Jun 24, 2016
- *      Author: hasan
- */
+/****************************************************************************************
+ Author      : Hasan Tafish
+ email:		 : htafish@hra.com
+ Date        : Nov,2016
+ Build       : -std=c++11
+
+		- Simple and lightweight Linear Algebra Library
+ ***************************************************************************************/
 
 #ifndef MYMATRIX_HPP_
 #define MYMATRIX_HPP_

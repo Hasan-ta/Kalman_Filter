@@ -1,23 +1,23 @@
-/*
- * MyKalmanFilt_impl.hpp
- *
- *  Created on: Jun 24, 2016
- *      Author: hasan
- */
+/****************************************************************************************
+ Author      : Hasan Tafish
+ email:		 : htafish@hra.com
+ Date        : Nov,2016
+ Build       : -std=c++11
 
+		- Implelemntation of MyKalmanFilt functionality
+ ***************************************************************************************/
 #ifndef MYKALMANFILT_IMPL_HPP_
 #define MYKALMANFILT_IMPL_HPP_
 
 #include "MyMatrix.hpp"
 
 
+void MyKalmanFilt::initFilter(const int& stateNo, const int& measNo, const int& stateNoiseSize, const int& measureNoiseSize){
+	setStateVarNum(stateNo);
+	setMeasVarNum(measNo);	
+	setV_size(measureNoiseSize);
+	setW_size(stateNoiseSize);
 
-MyKalmanFilt::MyKalmanFilt(const double& timeStep, const int& stateNum, const int& measNum, const int& size_W, const int& size_V, bool debug_on) {
-    T = timeStep;
-	stateVarNum = stateNum;
-	measVarNum = measNum;
-	V_size = size_V;
-	W_size = size_W;
 	X = MyMatrix<double>(stateVarNum, 1, 0);
 	Y = MyMatrix<double>(measVarNum, 1, 0);
 	A = MyMatrix<double>(stateVarNum, stateVarNum, 0);
@@ -27,10 +27,8 @@ MyKalmanFilt::MyKalmanFilt(const double& timeStep, const int& stateNum, const in
 	P = identity<double>(stateVarNum) * 1000;
 	W = MyMatrix<double>(stateVarNum,W_size,0);
 	V = MyMatrix<double>(measVarNum,V_size,0);
-	debug = debug_on;
-
-	if(debug_on)
-        std::ofstream file("KalmanFiltLog.log",std::ios::out | std::ios::trunc);
+	
+	filter_initialized = true;
 }
 
 MyKalmanFilt::~MyKalmanFilt() {
@@ -56,73 +54,97 @@ void MyKalmanFilt::setW() {
 void MyKalmanFilt::setV() {
 }
 
+void MyKalmanFilt::setTimeStep(const double& t){
+	T = t;
+}
+
 MyMatrix<double> MyKalmanFilt::getP() {
 	return P;
 }
 
-void MyKalmanFilt::init(const MyMatrix<double>& X_,
+void MyKalmanFilt::initStateAndCov(const MyMatrix<double>& X_,
 		const MyMatrix<double>& P_) {
 	X = X_;
 	P = P_;
 }
 
-void MyKalmanFilt::motionUpdate(const MyMatrix<double>& motion_) {
-    motion = motion_;
-    setA();
-    setW();
-    setR();
-    R = W*R*W.transpose();
-    //std::cout << "R: \n";
-    //R.print();
-    //std::cout << "A: \n";
-    //A.print();
-    //std::cout << "motion: \n";
-    //motion.print();
-	X = A*X + motion;
-	X(2,0) = angle_norm(X(2,0));
-	//std::cout << "Before Motion Update: \n";
-	//P.print();
-	P = A * P * A.transpose() + R;
-	//std::cout << "After Motion Update: \n";
-	//P.print();
-
-    if(debug)
-	{
-        std::string separator = "-------------------------------------------------------------------";
-        logger(separator, motion, "motion");
-        logger("", A, "A");
-        logger("", W, "W");
-        logger("", R, "R");
-        logger("", X, "X");
-        logger("", P, "P");
-    }
+void MyKalmanFilt::setStateVarNum(const int& n){
+	stateVarNum = n;
 }
 
-void MyKalmanFilt::sensorUpdate(const MyMatrix<double>& measure_) {
-    measure = measure_;
-	setC();
-	setV();
-	setQ();
-	Q = V*Q*V.transpose();
-	MyMatrix<double> S = C * P * C.transpose() + Q;
-	MyMatrix<double> K = P * C.transpose() * S.InverseHermitian();
-	Y = measure - C * X;
-	X = X + (K * Y);
+void MyKalmanFilt::setMeasVarNum(const int& n){
+	measVarNum = n;
+}
 
-	MyMatrix<double> I = identity<double>(stateVarNum);
-	P = (I - (K * C)) * P;
+void MyKalmanFilt::setV_size(const int& n){
+	V_size = n;
+}
 
-	if(debug)
+
+void MyKalmanFilt::setW_size(const int& n){
+	W_size = n;
+}
+
+
+void MyKalmanFilt::motionUpdate(const MyMatrix<double>& motion_) {
+	if(!filter_initialized)
+		throw "Initialize filter first by calling initFilter!";
+	else
 	{
-        logger("", measure, "measure");
-        logger("", C, "C");
-        logger("", V, "V");
-        logger("", Q, "Q");
-        logger("", K, "K");
-        logger("", Y, "Y");
-        logger("", X, "X");
-        logger("", P, "P");
-    }
+		motion = motion_;
+		setA();
+		setW();
+		setR();
+		R = W*R*W.transpose();
+		X = A*X + motion;
+		P = A * P * A.transpose() + R;
+
+		if(debug)
+		{
+		    std::string separator = "-------------------------------------------------------------------";
+		    logger(separator, motion, "motion");
+		    logger("", A, "A");
+		    logger("", W, "W");
+		    logger("", R, "R");
+		    logger("", X, "X");
+		    logger("", P, "P");
+		}
+	}
+}
+
+void MyKalmanFilt::sensorUpdate(const MyMatrix<double>& measure_) {	
+	if(!filter_initialized)
+		throw "Initialize filter first by calling initFilter!";
+	else
+	{
+		measure = measure_;
+		MyMatrix<double>g(2,1,0);
+		g(0,0) = X(0,0);
+		g(1,0) = X(3,0);
+		setC();
+		setV();
+		setQ();
+		Q = V*Q*V.transpose();
+		MyMatrix<double> S = C * P * C.transpose() + Q;
+		MyMatrix<double> K = P * C.transpose() * S.InverseHermitian();
+		Y = measure - g;
+		X = X + (K * Y);
+
+		MyMatrix<double> I = identity<double>(stateVarNum);
+		P = (I - (K * C)) * P;
+
+		if(debug)
+		{
+			logger("", V, "V");
+			logger("", Q, "Q");
+			logger("", S, "S");
+			logger("", S.UpperCholesky(), "chol(s)");
+			logger("", S.InverseHermitian(), "S^-1");
+			logger("", K, "K");
+			logger("", X, "X");
+			logger("", P, "P");
+		}
+	}
 }
 
 void MyKalmanFilt::step(const MyMatrix<double>& measure_,

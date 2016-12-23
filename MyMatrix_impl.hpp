@@ -1,9 +1,11 @@
-/*
- * MyMatrix_impl.hpp
- *
- *  Created on: Jun 24, 2016
- *      Author: hasan
- */
+/****************************************************************************************
+ Author      : Hasan Tafish
+ email:		 : htafish@hra.com
+ Date        : Nov,2016
+ Build       : -std=c++11
+
+		- MyMatrix functionality implementation
+ ***************************************************************************************/
 
 #ifndef MYMATRIX_IMPL_HPP_
 #define MYMATRIX_IMPL_HPP_
@@ -117,7 +119,12 @@ template<typename T> inline T& MyMatrix<T>:: operator() (const int& a, const int
     typename std::vector<T>::iterator it = (elements.begin() + a*cols + b);
     return *it;
     */
-	return elements[a*cols+b];
+	if((a >= rows) || (a < 0) || (b >= cols) || (b < 0))
+	{
+		throw "Invalid indix! can't set element out of borders";
+	}
+	else	
+		return elements[a*cols+b];
 }
 
 template<typename T> const inline T& MyMatrix<T>:: operator() (const int& a, const int& b) const
@@ -126,7 +133,12 @@ template<typename T> const inline T& MyMatrix<T>:: operator() (const int& a, con
     typename std::vector<T>::const_iterator it = (elements.begin() + a*cols + b);
     return *it;
     */
-	return elements[a*cols+b];
+	if((a >= rows) || (a < 0) || (b >= cols) || (b < 0))
+	{
+		throw "Invalid indix! can't set element out of borders";
+	}
+	else	
+		return elements[a*cols+b];
 }
 
 
